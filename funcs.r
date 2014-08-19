@@ -611,4 +611,100 @@ wtreg_fun <- function(dat_in, DO_obs = 'DO_obs', wins = list(4, 12, NULL),
   
   } 
   
+######
+# function for plotting repeating polygons in ggplot
+# 'flag.in' is vector indicating binomial variable for polys
+# 'flag.in' can be factor or numeric (w/ two values)
+# 'dat' is data.frame with 'flag.in'
+# 'fill.val' is fill colour of polygons
+# output is geom object
+poly.fun<-function(flag.in,dat, fill.val='yellow1'){
+
+  require(reshape2)
+  require(ggplot2)
+  
+  #for flag bias
+  if(class(flag.in) == 'numeric'){ 
+    neg.dates<-with(
+      dat,
+      DateTimeStamp[which(flag.in < 0)]
+      )
+    tz<-attr(neg.dates,'tzone')
+    diffs<-c(0,diff(as.numeric(neg.dates)))
+    strt.ind<-c(1,which(diffs>1800))
+    end.ind<-c(strt.ind-1,length(flag.in))
+    comb<-paste(neg.dates[strt.ind],neg.dates[end.ind],sep="\t")
+    
+    if(grepl('NA',comb[length(comb)])) 
+      comb[length(comb)]<-gsub('NA',neg.dates[length(neg.dates)],comb[length(comb)])
+  
+    comb<-do.call('rbind',strsplit(comb,'\t'))
+    comb<-cbind(comb,comb[,2],comb[,1])
+  
+    x.vals<-suppressMessages(melt(sapply(1:nrow(comb), 
+      function(x) comb[x,],simplify=F))$value)
+    x.vals<-as.POSIXct(as.character(x.vals),tz,
+      format='%Y-%m-%d %H:%M:%S')
+    y.vals<-rep(c(-1000,-1000,1000,1000),length=length(x.vals)) 
+    Antagonistic<-rep(1:(length(x.vals)/4),each=4)
+    polys<-data.frame(x.vals,y.vals,grp=Antagonistic)
+    
+    }
+
+  #for sunset/rise
+  if(class(flag.in) == 'factor'){
+    
+    plo.dates<-unique(dat[,c('solar','value')])
+    
+    if(plo.dates$solar[1] == 'sunset') 
+      plo.dates<-plo.dates[-1,]
+    if(plo.dates$solar[nrow(plo.dates)] == 'sunrise')
+      plo.dates<-rbind(
+        plo.dates,
+        data.frame(solar='sunset',value=max(dat$DateTimeStamp))
+        )
+    
+    plo.dates$inds<-rep(1:(nrow(plo.dates)/2),each=2)
+    tz<-attr(plo.dates$value,'tzone')
+    plo.dates$value <- as.character(plo.dates$value)
+    plo.dates<-dcast(plo.dates,inds~solar,value.var='value')
+    plo.dates<-with(plo.dates,
+      data.frame(sunrise,sunset,sunset,sunrise)
+      )
+   
+    x.vals <- sapply(1:nrow(plo.dates), 
+           function(x) plo.dates[x,],simplify=F)
+    x.vals<-suppressMessages(
+      melt(x.vals, measure.vars = names(x.vals[[1]]))$value
+      )
+    x.vals<-as.POSIXct(x.vals, tz, origin = '1970-01-01')
+    y.vals<-rep(c(-1000,-1000,1000,1000),nrow(plo.dates))
+    Day<-as.character(trunc(x.vals,'days'))
+    polys<-data.frame(x.vals,y.vals,grp=Day)
+
+    }
+  
+  out<-geom_polygon(data=polys,aes(x.vals,y.vals,group=grp,fill='grp'),alpha=0.6)
+  
+  return(out)
+  
+  }
+
+######
+# function for setting range on y axis
+rng.fun<-function(vec.in){
+  rngs<-range(vec.in,na.rm=T)
+  buffs<-0.07*abs(diff(rngs))
+  c(rngs[1]-buffs,rngs[2]+buffs)
+}
+
+######
+# custom theme, mod of theme_bw
+my_theme <- theme(
+  legend.title = element_blank(),legend.position = 'top',
+  axis.title.x = element_blank(),legend.box= 'horizontal',
+  plot.margin= unit(c(0, 1, 0, 1), "lines"), 
+  text = element_text(size = 16)
+)
+    
 
