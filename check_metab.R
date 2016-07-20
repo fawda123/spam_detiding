@@ -6,7 +6,9 @@
 # install.packages('devtools')
 # devtools::install_github('fawda123/SWMPr', ref = 'development')
 
-library(SWMPr)
+devtools::load_all('M:/docs/SWMPr')
+
+# library(SWMPr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
