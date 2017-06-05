@@ -1,8 +1,12 @@
-# README
-Marcus W. Beck, beck.marcus@epa.gov  
+---
+title: "README"
+output: 
+  html_document:
+    keep_md: yes
+author: "Marcus W. Beck, beck.marcus@epa.gov"
+---
 
-
-```r
+```{r warning = F, message = F}
 library(WtRegDO)
 # devtools::load_all('M:/docs/SWMP/WtRegDO')
 library(tidyverse)
@@ -10,8 +14,7 @@ library(doParallel)
 ```
 
 Prep data for weighted regression:
-
-```r
+```{r eval = TRUE, message = F, warning = F}
 # load, prep data
 load('data/sp01.RData')
 load('data/sp02.RData')
@@ -45,8 +48,7 @@ sp02 <- filter(spdat, site %in% 'sp02') %>%
 ```
 
 Check correlation of tidal height with sun angle:
-
-```r
+```{r eval = FALSE}
 # run weighted regression in parallel
 # requires parallel backend
 registerDoParallel(cores = 7)
@@ -69,8 +71,7 @@ save(corval, file = 'corval.RData', compress = 'xz')
 ```
 
 Evaluate corelation results:
-
-```r
+```{r fig.height = 6, fig.width = 9, warning = F, message = F, eval = T}
 load(file = 'data/corval.RData')
 
 ggplot(corval, aes(x = DateTimeStamp, y = val, colour = site)) +
@@ -79,11 +80,8 @@ ggplot(corval, aes(x = DateTimeStamp, y = val, colour = site)) +
   theme_bw()
 ```
 
-![](README_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
-
 Run weighted regression for each site, estimate metabolism:
-
-```r
+```{r eval = F}
 # run weighted regression in parallel
 # requires parallel backend
 registerDoParallel(cores = 7)
@@ -116,8 +114,8 @@ save(sp01metobs, sp01metdtd, sp02metobs, sp02metdtd, file = 'data/metabs.RData',
 ```
 
 Check results:
+```{r, message = F, warning = F, fig.height = 4, fig.width = 8, eval = T}
 
-```r
 load('data/sp01wtreg.RData')
 load('data/sp02wtreg.RData')
 
@@ -133,42 +131,19 @@ ggplot(toplo1, aes(x = DateTimeStamp, y = val, colour = var)) +
   facet_wrap(~site, ncol = 1, scales = 'free_y') +
   theme_bw() +
   scale_y_continuous('DO_mgl')
-```
 
-![](README_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
-
-```r
 # observed and detided metabolism
 load(file = 'data/metabs.RData')
 
 plot(sp01metobs, by = 'days') + 
   ggtitle('sp01, observed DO')
-```
-
-![](README_files/figure-html/unnamed-chunk-6-2.png)<!-- -->
-
-```r
 plot(sp01metdtd, by = 'days') + 
   ggtitle('sp01, detided DO')
-```
-
-![](README_files/figure-html/unnamed-chunk-6-3.png)<!-- -->
-
-```r
 plot(sp02metobs, by = 'days') + 
   ggtitle('sp02, observed DO')
-```
-
-![](README_files/figure-html/unnamed-chunk-6-4.png)<!-- -->
-
-```r
 plot(sp02metdtd, by = 'days') + 
   ggtitle('sp02, detided DO')
-```
 
-![](README_files/figure-html/unnamed-chunk-6-5.png)<!-- -->
-
-```r
 tokp <- c('meanPg', 'sdPg', 'anomPg', 'meanRt', 'sdRt', 'anomRt')
 metcomp <- list(
   sp01metobs = meteval(sp01metobs)[tokp],
@@ -178,14 +153,5 @@ metcomp <- list(
   ) %>% 
   do.call('cbind', .)
 metcomp
-```
 
-```
-##        sp01metobs sp01metdtd sp02metobs sp02metdtd
-## meanPg 187.036    195.1479   51.11921   49.01884  
-## sdPg   112.9164   70.38351   39.98914   39.60008  
-## anomPg 1.273885   0.6369427  3.821656   8.280255  
-## meanRt -186.8889  -192.2115  -51.25198  -48.08603 
-## sdRt   117.9725   66.18281   34.66544   36.2747   
-## anomRt 1.273885   0          2.547771   8.280255
 ```
